@@ -1,20 +1,28 @@
 /*
-Copyright © 2025 NAME HERE <EMAIL ADDRESS>
-
+Copyright © 2025 Serhii Nechytailo <alkatran@gmail.com>
 */
 package cmd
 
 import (
 	"fmt"
+	"log"
+	"os"
+	"time"
 
 	"github.com/spf13/cobra"
+	tb "gopkg.in/telebot.v3"
 )
 
+var (
+	//Teletoken
+	TeleToken = os.Getenv("TELE_TOKEN")
+)
 
 // telebotCmd represents the telebot command
 var telebotCmd = &cobra.Command{
-	Use:   "telebot",
-	Short: "A brief description of your command",
+	Use:     "telebot",
+	Aliases: []string{"start"},
+	Short:   "A brief description of your command",
 	Long: `A longer description that spans multiple lines and likely contains examples
 and usage of using your command. For example:
 
@@ -22,7 +30,32 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("version called")
+		fmt.Println("Telebot %s started", appVersion)
+		telebot, err := tb.NewBot(tb.Settings{
+			URL:    "",
+			Token:  TeleToken,
+			Poller: &tb.LongPoller{Timeout: 10 * time.Second},
+		})
+
+		if err != nil {
+			log.Fatalf("Please check TELE_TOKEN env variable. %s", err)
+		}
+
+		telebot.Handle(tb.OnText, func(m tb.Context) error {
+			log.Printf(m.Message().Payload, m.Text())
+			payload := m.Message().Payload
+
+			switch payload {
+			case "hello":
+				return m.Send(fmt.Sprintf("Hello I'm TeleBot %s!", appVersion))
+			}
+
+			return err
+
+		})
+
+		telebot.Start()
+
 	},
 }
 
